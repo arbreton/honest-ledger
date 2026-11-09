@@ -1,0 +1,9 @@
+{
+  "approved_by": "arbreton (operator), in chat",
+  "approved_at": "2026-11-09T04:58:37+00:00",
+  "rule": "post exactly this text, once, as a reply; no edits without re-approval",
+  "messages": {
+    "ssv.md": "7f3018e7db8b60ca44c38ee5e2c158fb416efdbe7e23160902c8e1cca7ea9cb5",
+    "cow-dao.md": "551edb179193132719dfb9343c4a83ddaf080457f225fb0af4b245c318cd45fd"
+  }
+}
