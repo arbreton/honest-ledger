@@ -205,6 +205,19 @@ def write_digest(c):
     L += ["", "## Highest expected value still open"] + [f"* ${o['score']}/h  ${o['reward_usd']:,.0f}  {o['title'][:70]}  [{o['status']}]  {o['url']}" for o in top_open(c, 8)]
     DIGEST.parent.mkdir(parents=True, exist_ok=True); DIGEST.write_text("\n".join(L) + "\n")
 
+# ---------- outreach safety switch (see pipeline/GUARDRAILS.md) ----------
+PAUSE = ROOT / "data" / "outreach.pause"
+MAX_OUTBOUND_PER_DAY = 5
+
+def outreach_paused():
+    """True if the operator created data/outreach.pause. Any code that sends anything must check this first."""
+    return PAUSE.exists()
+
+def may_send_today(c):
+    """Daily cap on outbound messages (leads contacted today)."""
+    n = c.execute("SELECT count(*) FROM leads WHERE last_contact=?", (now_iso()[:10],)).fetchone()[0]
+    return (not outreach_paused()) and n < MAX_OUTBOUND_PER_DAY
+
 # ---------- human-in-the-loop commands ----------
 def mark(oid, status, note=""):
     c = db(); r = c.execute("SELECT id FROM opps WHERE id LIKE ?", (oid + "%",)).fetchone()

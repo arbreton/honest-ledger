@@ -67,6 +67,12 @@ class Bot(unittest.TestCase):
         bot.add_lead("Acme DAO", "https://example.org"); bot.lead_contacted(1)
         c = bot.db(); c.execute("UPDATE leads SET next_followup=? WHERE id=1", (iso_in(-1),)); c.commit()
         self.run_([]); self.assertTrue(any("follow up with lead 'Acme DAO'" in m for m in self.msgs))
+    def test_outreach_pause_switch_and_daily_cap(self):
+        bot.PAUSE = self.tmp / "outreach.pause"; c = bot.db()
+        self.assertTrue(bot.may_send_today(c)); bot.PAUSE.write_text("x"); self.assertTrue(bot.outreach_paused()); self.assertFalse(bot.may_send_today(c))
+        bot.PAUSE.unlink()
+        for i in range(bot.MAX_OUTBOUND_PER_DAY): bot.add_lead(f"L{i}", ""); bot.lead_contacted(i + 1)
+        self.assertFalse(bot.may_send_today(bot.db()))                                   # 5 contacted today: cap reached
     def test_interval_gating(self):
         self.assertIsNotNone(self.run_([])); self.assertIsNone(bot.run(fetchers={"x": lambda: []}, notify=self.notify))     # second call inside 6h is a no-op
     def test_a_failing_source_does_not_stop_the_run(self):
