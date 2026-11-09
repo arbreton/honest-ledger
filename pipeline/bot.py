@@ -49,14 +49,33 @@ def fetch_immunefi(c):
     out.sort(key=lambda o: (not o["open_source"], o["assets"], -o["reward_usd"]))
     return out[:ic["max_results"]]
 
+def fetch_superteam_details(o):
+    """Full listing text + region, for the few items about to be drafted. Public endpoint; failures just mean 'not refined'."""
+    slug = o["url"].rsplit("/", 1)[-1]
+    d = json.loads(_get(f"https://earn.superteam.fun/api/listings/details/{slug}"))
+    import re
+    return {"text": re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", d.get("description") or "")).lower(), "region": d.get("region"), "agent": d.get("agentAccess")}
+
+def refine(o, d, pr):
+    """Adjust fit using the real description. Returns (multiplier, reasons)."""
+    t, m, why = d.get("text", ""), 1.0, []
+    off_stack = any(k in t for k in ("solana", "anchor", "rust program")) and not any(k in t for k in ("ethereum", "evm", "base chain", "on base"))
+    if d.get("region") not in (None, "Global"): m *= 0.2; why.append(f"region-limited ({d.get('region')})")
+    if off_stack: m *= 0.2; why.append("outside the proven EVM stack (firm demotion, no bonus applies)")
+    if any(k in t for k in ("marketing", "grow your", "bring users", "real users", "community growth", "make money while you sleep")): m *= 0.6; why.append("growth/marketing heavy")
+    if not off_stack and any(k in t for k in ("python", "typescript", "api", "indexer", "analytics", "dashboard", "monitor", "reconcil")): m *= 1.25; why.append("technical match")
+    return m, why
+
 # ---------- scoring ----------
-def fit_hits(title, pr):
-    t = title.lower()
+HARD_NO = {"video", "logo", "design", "translation", "translate", "meme", "animation", "illustration", "tiktok", "instagram", "podcast", "trading competition", "trading contest", "giveaway"}
+
+def fit_hits(title, pr, url=""):
+    t = (title + " " + url.rsplit("/", 1)[-1].replace("-", " ")).lower()      # the link slug often reveals what the title hides ("...-video-chile-colombia")
     return [k for k in pr["keywords_positive"] if k in t], [k for k in pr["keywords_negative"] if k in t]
 
 def estimate(o, pr):
     """Expected $ and hours. Deliberately crude and conservative; shown so the human can overrule it."""
-    pos, neg = fit_hits(o["title"], pr)
+    pos, neg = fit_hits(o["title"], pr, o.get("url", ""))
     if o["source"] == "immunefi":
         # A first finding is usually a medium/low bug paying a few thousand dollars, never a % of the headline cap, and the biggest,
         # most-audited programs are the LEAST likely to yield one. Odds are small and unproven, so EV is capped and never scales with maxBounty.
@@ -67,6 +86,8 @@ def estimate(o, pr):
         fit = 0.5
     else:
         fit = max(0.15, min(1.5, 0.7 + 0.25 * len(pos) - 0.6 * len(neg)))
+        if any(k in neg for k in HARD_NO): fit *= 0.1                                        # wrong kind of work entirely (video, design, trading contests...)
+        if any(k in (o["title"] + " " + o.get("url", "")).lower() for k in ("solana", "sui ", "aptos", "ton ")) and not any(k in pos for k in ("base", "ethereum", "onchain")): fit *= 0.4   # outside the proven stack (EVM)
         subs = o.get("competition"); winners = 3 if o["reward_usd"] >= 500 else 1
         p = min(0.6, winners / ((subs if subs is not None else 30) + winners))
         ev = o["reward_usd"] * p * fit
@@ -132,7 +153,7 @@ def watch_pages(c, urls):
         elif r["sha"] != sha: c.execute("UPDATE watch SET sha=?, changed_at=? WHERE url=?", (sha, now_iso(), u)); changed.append(u)
     return changed
 
-def run(fetchers=None, notify=None, force=False):
+def run(fetchers=None, notify=None, force=False, details_fn=None):
     """One pass. `fetchers` lets tests inject data; `notify(level, text)` receives alerts."""
     C, pr = cfg(), profile(); c = db(); notify = notify or (lambda *a: None)
     last = c.execute("SELECT ts FROM runs ORDER BY id DESC LIMIT 1").fetchone()
@@ -149,9 +170,16 @@ def run(fetchers=None, notify=None, force=False):
         h = hours_to(r["deadline"]) if r["deadline"] else None
         if h is not None and h < 0: c.execute("UPDATE opps SET status='EXPIRED' WHERE id=?", (r["id"],)); stats["expired"] += 1; continue
         if r["status"] == "NEW" and r["score"] >= C["shortlist_min_score"] and (h is None or h > 24): c.execute("UPDATE opps SET status='SHORTLISTED' WHERE id=?", (r["id"],))
+    details_fn = details_fn if details_fn is not None else (fetch_superteam_details if fetchers is None else None)
+    if details_fn:                                       # read the full text of the few items about to be drafted, then re-rank
+        for r in c.execute("SELECT * FROM opps WHERE status='SHORTLISTED' AND source='superteam' AND (note IS NULL OR note NOT LIKE 'refined:%') ORDER BY score DESC LIMIT 6").fetchall():
+            try:
+                m, why = refine(dict(r), details_fn(dict(r)), pr); sc = round(r["score"] * m, 2)
+                c.execute("UPDATE opps SET score=?, ev_usd=?, note=?, status=? WHERE id=?", (sc, round(r["ev_usd"] * m, 2), "refined: " + ("; ".join(why) or "no change"), "SHORTLISTED" if sc >= C["shortlist_min_score"] else "NEW", r["id"]))
+            except Exception: pass
     DRAFTS.mkdir(parents=True, exist_ok=True)
     for r in c.execute("SELECT * FROM opps WHERE status='SHORTLISTED' ORDER BY score DESC LIMIT ?", (C["max_new_drafts_per_run"],)).fetchall():
-        o = dict(r); path = DRAFTS / f"{r['id']}.md"; path.write_text(draft_packet(o, pr))
+        o = dict(r); path = DRAFTS / f"{r['id']}.md"; path.write_text(draft_packet(o, pr) + (f"\n## Why the bot ranked it this way\n{r['note']}\n" if r["note"] else ""))
         c.execute("UPDATE opps SET status='DRAFTED', draft=? WHERE id=?", (str(path), r["id"])); stats["drafted"] += 1
         notify("INFO", f"Pipeline: draft ready for '{r['title'][:60]}' (${r['reward_usd']:,.0f}, ~${r['score']}/h expected). {path.name}")
     for r in c.execute("SELECT * FROM opps WHERE status='DRAFTED' AND deadline!='' AND (alerted IS NULL)").fetchall():

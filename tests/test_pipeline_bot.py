@@ -16,6 +16,26 @@ class Bot(unittest.TestCase):
         few = bot.estimate(opp(1, "Build a Python monitoring bot", subs=5), self.pr); many = bot.estimate(opp(2, "Build a Python monitoring bot", subs=600), self.pr)
         bad = bot.estimate(opp(3, "Make a meme video", subs=5), self.pr)
         self.assertGreater(few["ev_usd"], many["ev_usd"] * 5); self.assertLess(bad["ev_usd"], few["ev_usd"])
+    def test_link_slug_and_trading_competitions_count_against_fit(self):
+        plain = bot.estimate(opp(7, "Show us how you use Acme", subs=28), self.pr)
+        slug = bot.estimate(dict(opp(8, "Show us how you use Acme", subs=28), url="https://x.org/listing/acme-video-chile-colombia"), self.pr)
+        trade = bot.estimate(opp(9, "Panta x NectarFi Trading Competition Bounty", subs=53), self.pr)
+        self.assertLess(slug["ev_usd"], plain["ev_usd"] / 2); self.assertLess(trade["ev_usd"], plain["ev_usd"])
+    def test_wrong_kind_of_work_never_reaches_drafts(self):
+        self.run_([opp(1, "Make a video about our x402 Feature", reward=500, subs=48), opp(2, "Build a Solana growth product", reward=5000, subs=71)])
+        st = {r["id"]: r["status"] for r in bot.db().execute("SELECT id,status FROM opps")}
+        self.assertNotEqual(st["t-1"], "DRAFTED")
+    def test_description_can_demote_a_title_that_looked_good(self):
+        base = bot.estimate(opp(1, "Build and Route Challenge", reward=5000, subs=4), self.pr)["score"]
+        stub = lambda o: {"text": "build a useful solana product with an api and bring real users with marketing", "region": "Global"}
+        bot.run(fetchers={"x": lambda: [opp(1, "Build and Route Challenge", reward=5000, subs=4)]}, notify=self.notify, force=True, details_fn=stub)
+        r = bot.db().execute("SELECT score,note FROM opps WHERE id='t-1'").fetchone()
+        self.assertIn("outside the proven EVM stack", r["note"]); self.assertLess(r["score"], base * 0.2)      # firm: a technical-sounding word cannot rescue it
+    def test_description_can_confirm_a_real_match(self):
+        items = [opp(2, "Build a Python agent dashboard for Base", reward=1500, subs=4)]
+        stub = lambda o: {"text": "we need a python api and analytics dashboard to monitor onchain activity on base", "region": "Global"}
+        bot.run(fetchers={"x": lambda: items}, notify=self.notify, force=True, details_fn=stub)
+        self.assertEqual(bot.db().execute("SELECT status FROM opps WHERE id='t-2'").fetchone()[0], "DRAFTED")
     def test_security_bounties_are_valued_as_long_shots(self):
         e = bot.estimate(opp(4, "Immunefi: X (up to $100,000)", reward=100000, kind="security", source="immunefi", subs=None, open_source=True, assets=2), self.pr)
         self.assertLess(e["ev_usd"], 100); self.assertGreaterEqual(e["effort_h"], 20)
