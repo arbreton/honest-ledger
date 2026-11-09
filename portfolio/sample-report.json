@@ -1,0 +1,121 @@
+{
+ "address": "0x3FE04A59Ebd38cF06080a6F60a98D124eb59392A",
+ "from_block": 54933416,
+ "to_block": 55041413,
+ "from": "2026-11-08T22:30+00:00",
+ "to": "2026-11-09T04:30+00:00",
+ "eth_usd_start": 2125.08741046,
+ "eth_usd_end": 2141.62215947,
+ "tokens": [
+  {
+   "symbol": "USDC",
+   "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+   "start": 229101.271157,
+   "end": 254303.799016,
+   "in": 314023.489684,
+   "out": 288820.961825,
+   "transfers": 2339,
+   "unexplained": 0.0,
+   "reconciled": true,
+   "usd_end": 254303.799016,
+   "usd_start": 229101.271157,
+   "largest_outflows": [
+    {
+     "amount": 2495.036024,
+     "to": "0x7c4c7ac39f3db79b10400b17a2f67dd6a4e9fec3",
+     "tx": "0x958a1cf2ef\u2026"
+    },
+    {
+     "amount": 1947.816652,
+     "to": "0xc67489dbd11f4d980db4313890dcfe4ca3f3ea27",
+     "tx": "0x76c4531884\u2026"
+    },
+    {
+     "amount": 1947.816652,
+     "to": "0xc67489dbd11f4d980db4313890dcfe4ca3f3ea27",
+     "tx": "0x47981223e8\u2026"
+    }
+   ],
+   "top_counterparties": [
+    {
+     "who": "0x51c72848\u2026",
+     "net": 78602.574317
+    },
+    {
+     "who": "0x7c4c7ac3\u2026",
+     "net": -12198.239748
+    },
+    {
+     "who": "0xbeeb9eee\u2026",
+     "net": -9191.313716
+    },
+    {
+     "who": "0x1f012ab1\u2026",
+     "net": -8116.995677
+    },
+    {
+     "who": "0x32559f73\u2026",
+     "net": -8002.865457
+    }
+   ]
+  },
+  {
+   "symbol": "WETH",
+   "address": "0x4200000000000000000000000000000000000006",
+   "start": 841.3988997314714,
+   "end": 829.5030814826737,
+   "in": 141.3068928279486,
+   "out": 153.2027110767463,
+   "transfers": 2342,
+   "unexplained": 0.0,
+   "reconciled": true,
+   "usd_end": 1776482.180651943,
+   "usd_start": 1788046.2089942454,
+   "largest_outflows": [
+    {
+     "amount": 6.853412160735705,
+     "to": "0x6ed60864fb8fb610a65af5d16cef272548bc64d6",
+     "tx": "0x15f10b71c7\u2026"
+    },
+    {
+     "amount": 0.9403321618862844,
+     "to": "0xcaf22ce31298cf2bf1d152862f80216478ad7c67",
+     "tx": "0x258e3c0e11\u2026"
+    },
+    {
+     "amount": 0.8690235879,
+     "to": "0xc67489dbd11f4d980db4313890dcfe4ca3f3ea27",
+     "tx": "0xbc91df0f17\u2026"
+    }
+   ],
+   "top_counterparties": [
+    {
+     "who": "0x51c72848\u2026",
+     "net": -36.58792851809893
+    },
+    {
+     "who": "0x7c4c7ac3\u2026",
+     "net": 5.6400895241264415
+    },
+    {
+     "who": "0xbeeb9eee\u2026",
+     "net": 4.289602444597787
+    },
+    {
+     "who": "0x1f012ab1\u2026",
+     "net": 3.8125461390106046
+    },
+    {
+     "who": "0x32559f73\u2026",
+     "net": 3.7359716465718322
+    }
+   ]
+  }
+ ],
+ "eth": {
+  "start": 0.0,
+  "end": 0.0,
+  "delta": 0.0,
+  "note": "Native ETH moves through internal calls and gas, which token logs cannot explain; shown for context, not reconciled."
+ }
+}

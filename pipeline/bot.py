@@ -135,7 +135,7 @@ needs_polish: true   # a human (or the assistant, when asked) should tailor this
 {'; '.join(pr['not_claimed'])}
 
 ## Draft opening (edit before use)
-Hi, I'm {pr['handle']}. {pr['headline']}. Relevant proof you can verify yourself: {pr['repo']}. For this I would [one sentence on the exact deliverable], and I can deliver by [date]. I'm happy to start with a small paid trial.
+Hi, I'm {pr.get('agent_name', pr['handle'])}. {pr.get('disclosure', '')} {pr['headline']}. Relevant proof you can verify yourself: {pr['repo']}. For this I would [one sentence on the exact deliverable], and I can deliver by [date]. I'm happy to start with a small paid trial.
 
 ## Before submitting
 - [ ] Re-read the listing and rules; confirm eligibility, payout token and any KYC

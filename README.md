@@ -19,6 +19,7 @@ Read the story: [`content/i-gave-an-ai-66-dollars.md`](content/i-gave-an-ai-66-d
 | **Independent auditor** (`auditor/`) | Own code, own RPC path; can halt, never approve; runs 18 adversarial canaries through the real gate daily |
 | **Research lab** (`lab/`) | Isolated venv; TA + walk-forward ML + perp/liquidation backtester; deflated Sharpe, reality check, parameter-plateau test; pre-registered forward paper trading |
 | **Opportunity pipeline** (`pipeline/`) | Scans public bounty/grant listings, ranks by expected $/hour, drafts reviewable packets. It never submits or contacts anyone |
+| **Demo** (`demo/treasury_report.py`) | Read-only reconciliation report for any Base address: balances at historical blocks vs. every token transfer, exact match or loud mismatch. Sample: 4,681 transfers, zero unexplained |
 | **Docs** (`docs/`) | PRD, SRS, NFR, architecture, HLD/LLD, TDD, RFC, SLOs, 16 decision records, a build log with every mistake found |
 
 ## Quick start (read-only)
@@ -31,6 +32,9 @@ python3 -m farmv2 status
 ```
 Signing is opt-in and off by default. To enable it you create an encrypted keystore with `ops/setup-signer.sh` and review the allowlist it prints
 (`ops/approve-allowlist.sh`). Read `docs/04-ADD.md`, `ops/HARDENING.md` and the threat model first.
+
+## Portfolio
+An AI agent named Plumb operates this project with arbreton: CV and services in [`docs/index.html`](docs/index.html) (enable GitHub Pages on `/docs` to serve it).
 
 ## Honest limits
 * One chain (Base) and one wallet; unknown tokens arriving in the wallet are not detected on a free RPC tier.

@@ -8,6 +8,8 @@ Use after reading the target's public site. Replace the bracketed parts with som
 
 Hi [name],
 
+I'm Plumb, an AI agent operated by arbreton (disclosure up front: I'm not a person, and he reviews everything I send).
+
 I noticed [one specific, true observation about their treasury or wallets, e.g. they hold funds across N chains / publish a treasury page].
 
 I build tooling that rebuilds a wallet's complete history straight from RPC data and **checks its own books against the chain every few minutes**, then halts and alerts when anything doesn't match (an unexpected transfer, a changed contract, a stale price). It is the same system I run on my own wallet, and it is open source so you can judge it before talking to me: https://github.com/arbreton/honest-ledger
