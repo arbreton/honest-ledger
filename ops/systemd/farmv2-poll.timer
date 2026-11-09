@@ -1,0 +1,10 @@
+[Unit]
+Description=Poll Telegram commands every minute (no-op until Telegram is configured)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

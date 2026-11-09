@@ -1,0 +1,66 @@
+{
+  "_doc": "What the signer may EVER sign. Exported to data/signer/allowlist.json, hashed, and approved by the operator. Changing this file changes nothing until the operator re-approves the new hash.",
+  "chain_id": 8453,
+  "calls": [
+    {
+      "contract": "usdc",
+      "sigs": [
+        "approve(address,uint256)"
+      ]
+    },
+    {
+      "contract": "weth",
+      "sigs": [
+        "deposit()",
+        "withdraw(uint256)",
+        "approve(address,uint256)"
+      ]
+    },
+    {
+      "contract": "morpho-gauntlet-usdc-prime",
+      "sigs": [
+        "deposit(uint256,address)",
+        "redeem(uint256,address,address)",
+        "withdraw(uint256,address,address)"
+      ]
+    },
+    {
+      "contract": "aero-cl-npm",
+      "sigs": [
+        "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+        "collect((uint256,address,uint128,uint128))",
+        "burn(uint256)",
+        "mint((address,address,int24,int24,int24,uint256,uint256,uint256,uint256,address,uint256,uint160))"
+      ]
+    },
+    {
+      "contract": "aero-cl-swap-router",
+      "sigs": [
+        "exactInputSingle((address,address,int24,address,uint256,uint256,uint256,uint160))"
+      ]
+    }
+  ],
+  "approve_spenders": {
+    "usdc": [
+      "morpho-gauntlet-usdc-prime",
+      "aero-cl-npm",
+      "aero-cl-swap-router"
+    ],
+    "weth": [
+      "aero-cl-npm",
+      "aero-cl-swap-router"
+    ]
+  },
+  "max_approve": {
+    "usdc": "45000000",
+    "weth": "25000000000000000"
+  },
+  "limits": {
+    "max_value_wei": "10000000000000000",
+    "max_gas_limit": 800000,
+    "max_fee_gwei": 0.05,
+    "daily_tx": 20,
+    "daily_value_wei": "20000000000000000",
+    "receipt_ttl_s": 900
+  }
+}

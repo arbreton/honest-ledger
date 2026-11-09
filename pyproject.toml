@@ -1,0 +1,6 @@
+[project]
+name = "farmv2"
+version = "0.1.0"
+description = "Ledger-first farming system (design: docs/)"
+requires-python = ">=3.12"
+dependencies = []   # S0 core is stdlib-only by design (ADR-0001, NFR-S7)

@@ -1,0 +1,95 @@
+{
+  "chain_id": 8453,
+  "wallet": {
+    "address": "0x0000000000000000000000000000000000000001",
+    "label": "PLACEHOLDER: set your wallet in registry-data/local.json (git-ignored), see README"
+  },
+  "approved_baseline": "operator, migration baseline 2026-11-08 (contracts already in use by v1)",
+  "contracts": [
+    {
+      "id": "usdc",
+      "name": "USDC (Circle, native)",
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "protocol": "circle",
+      "role": "token",
+      "decimals": 6,
+      "code_hash": "0xa6705a10bb756b5dea144591118be77d7af0c3eee3bf2dfe2583dcb0364fefab"
+    },
+    {
+      "id": "weth",
+      "name": "WETH9 (Base predeploy)",
+      "address": "0x4200000000000000000000000000000000000006",
+      "protocol": "base",
+      "role": "token",
+      "decimals": 18,
+      "code_hash": "0x8a3a1f6a9f9dce633117adee5b458245835a8645a8c8726a26382a4622508b1c"
+    },
+    {
+      "id": "chainlink-eth-usd",
+      "name": "Chainlink ETH/USD",
+      "address": "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
+      "protocol": "chainlink",
+      "role": "oracle",
+      "decimals": 8,
+      "code_hash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2"
+    },
+    {
+      "id": "aero-cl-npm",
+      "name": "Aerodrome Slipstream NonfungiblePositionManager",
+      "address": "0xe1f8cd9AC4e4A65F54f38a5CdAfCA44f6dD68b53",
+      "protocol": "aerodrome",
+      "role": "lp-nft",
+      "code_hash": "0xbe8ffea1fd2344fe46e18d0b44bfffe1f2e5ff5facb8b5dc80efc127e2ed9ab3"
+    },
+    {
+      "id": "aero-cl-weth-usdc",
+      "name": "Aerodrome Slipstream WETH/USDC 0.05% pool",
+      "address": "0x3FE04A59Ebd38cF06080a6F60a98D124eb59392A",
+      "protocol": "aerodrome",
+      "role": "pool",
+      "code_hash": "0xad8972486d67a48db1f32f254a4c2f4be28df0b5f399559d1e7cd8fbcfbedc96"
+    },
+    {
+      "id": "aero-cl-gauge",
+      "name": "Aerodrome Slipstream gauge (currently killed)",
+      "address": "0xA0B61fdB9f1FB9b917Fe38b49427Fd4D87472D28",
+      "protocol": "aerodrome",
+      "role": "gauge",
+      "code_hash": "0x788e58f9a3537cf0f15c11983fdfc75e1d3ea5ed6e4fe601a5e0f55d9057983a"
+    },
+    {
+      "id": "aero-voter",
+      "name": "Aerodrome Voter",
+      "address": "0x16613524e02ad97eDfeF371bC883F2F5d6C480A5",
+      "protocol": "aerodrome",
+      "role": "voter",
+      "code_hash": "0x465dc52dbb30fca5cca06c57fb266ec0e36c10530cdc6738dc4f035c81a0ae96"
+    },
+    {
+      "id": "morpho-gauntlet-usdc-prime",
+      "name": "Morpho Gauntlet USDC Prime vault (ERC-4626)",
+      "address": "0xeE8F4eC5672F09119b96Ab6fB59C27E1b7e44b61",
+      "protocol": "morpho",
+      "role": "vault",
+      "decimals": 18,
+      "code_hash": "0x904289f0cca9814e4440e741e0d56aafc656f5889f3f032462a96e72df4eb9ad"
+    },
+    {
+      "id": "dolomite-margin",
+      "name": "DolomiteMargin",
+      "address": "0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D",
+      "protocol": "dolomite",
+      "role": "margin",
+      "code_hash": "0xf4e5308ca233d3d7a2cbe9729ec988d823342f159a47a8b7f95132af7e183afa"
+    },
+    {
+      "id": "aero-cl-swap-router",
+      "name": "Aerodrome Slipstream SwapRouter (factory-matched to our pool)",
+      "address": "0x698Cb2b6dd822994581fEa6eA4Fc755d1363A92F",
+      "protocol": "aerodrome",
+      "role": "router",
+      "evidence": "2026-11-08: top swap sender on our WETH/USDC pool (650 swaps/22h); router.factory()==pool.factory()==0xf8f2eb49...; WETH9()==Base WETH. An address recalled from memory (0xBE6D...) was REJECTED: its factory (0x5e7b...) differs.",
+      "code_hash": "0xfedc4e21e1097b0ec1b4f1aa901cf645c22f9e5d297727b0f37275ee1d083df4"
+    }
+  ]
+}

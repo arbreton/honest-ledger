@@ -1,0 +1,17 @@
+# runtime state, secrets and generated artifacts: never commit
+data/
+site/
+lab/.venv/
+lab/data/
+lab/logs/
+lab/results/
+lab/models/
+*.pkl
+*.db
+*.db-*
+*.env
+.env
+__pycache__/
+*.pyc
+*.sock
+registry-data/local.json

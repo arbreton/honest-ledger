@@ -1,0 +1,8 @@
+[Unit]
+Description=farmv2 Telegram command poll (halt/approve/status)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/workspace/crypto-scanner-v2
+ExecStart=/usr/bin/python3 -m farmv2 poll
+TimeoutStartSec=60

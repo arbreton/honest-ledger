@@ -1,0 +1,16 @@
+{
+  "_doc": "Airdrop/points programs re-graded from evidence, not typed payouts (ADR-0011). class caps the probability; marginal EV is 0 until published criteria let us compute a share of the pool.",
+  "programs": [
+    {"id": "base-token", "name": "Base network token", "evidence_class": "E1", "criteria_published": false,
+     "evidence": "Base lead said in Sep 2025 that a token is being explored; no terms, snapshot or allocation published (Zerion, KuCoin summaries; unofficial).",
+     "note": "Cannot be farmed deliberately: no criteria. Passive use of Base only."},
+    {"id": "morpho-rewards", "name": "Morpho / Merkl vault incentives", "evidence_class": "E2", "criteria_published": true,
+     "evidence": "Merkl distributes incentives to Morpho vault depositors; rates change at any time.",
+     "note": "Already earned passively via the USDC vault; reward token claims are watched, not chased."},
+    {"id": "dolomite", "name": "Dolomite points", "evidence_class": "E0", "criteria_published": false,
+     "evidence": "Only aggregator pages (v1 cited airdropalert.com). No token or conversion terms.",
+     "note": "Existing 0.00085 ETH position kept; no further spend."},
+    {"id": "zora", "name": "Zora creator rewards", "evidence_class": "E0", "criteria_published": false,
+     "evidence": "Aggregator only.", "note": "Not pursued."}
+  ]
+}

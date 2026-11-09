@@ -1,0 +1,4 @@
+{
+  "wallet": { "address": "0xYourChecksummedWalletAddress", "label": "my-hot-wallet" },
+  "netlify_site_id": "optional: only if you deploy the dashboard to your own Netlify site"
+}

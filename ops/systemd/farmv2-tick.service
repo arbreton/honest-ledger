@@ -1,0 +1,11 @@
+[Unit]
+Description=farmv2 tick (index, reconcile, NAV, audit, canaries, dashboard)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/workspace/crypto-scanner-v2
+ExecStart=/usr/bin/python3 -m farmv2 tick --deploy --quiet
+TimeoutStartSec=900
+Nice=10
+NoNewPrivileges=yes

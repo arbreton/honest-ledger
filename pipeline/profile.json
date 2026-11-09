@@ -1,0 +1,20 @@
+{
+  "_doc": "Facts the bot may cite in drafts. Only claims that are true AND checkable in the public repo. Add to it; never inflate it.",
+  "handle": "arbreton",
+  "repo": "https://github.com/arbreton/honest-ledger",
+  "headline": "Builds self-custody agent tooling that checks its own books against the chain",
+  "facts": [
+    "Event-sourced, hash-chained double-entry ledger that rebuilds a wallet's full history from raw RPC and reconciles to the chain to the wei every 15 minutes",
+    "Isolated transaction signer: allowlisted contracts and selectors, recipient rules decoded from calldata, exact capped approvals, single-use signed receipts, kill switch",
+    "Every transaction is simulated on a mainnet fork first and must pass a rule gate; 18 adversarial canaries run daily against the real gate",
+    "Independent auditor (separate code, own RPC path) that can halt the system but never approve or sign",
+    "Research lab: 790 strategies backtested with walk-forward ML, perp funding and liquidation modelling, deflated Sharpe and a bootstrap reality check; zero survived, and the lab says so",
+    "Pre-registered forward test (docs/12-forward-test-plan.md) with a fingerprinted plan, 15 paper accounts, and automatic day-30 review",
+    "74 offline tests plus fork integration tests that execute real contract flows against a mainnet fork",
+    "Found and corrected its own mistakes in public docs (a wrong gas figure, a block-time unit error, a wrong router address recalled from memory)"
+  ],
+  "skills": ["python", "on-chain data / raw JSON-RPC indexing", "risk controls and kill switches", "backtesting and statistics", "AI agent automation", "dashboards and reporting", "technical writing"],
+  "not_claimed": ["no professional Solidity audit history", "no paid security findings yet", "no production client work yet"],
+  "keywords_positive": ["python", "bot", "agent", "ai", "automation", "dashboard", "data", "analytics", "api", "script", "tool", "monitor", "backend", "indexer", "research", "report", "write", "article", "tutorial", "documentation", "integration", "sdk", "base", "ethereum", "defi", "onchain", "on-chain", "risk", "wallet", "reconcil", "x402", "mcp"],
+  "keywords_negative": ["video", "design", "logo", "meme", "translation", "translate", "illustration", "animation", "tiktok", "instagram", "podcast", "spanish", "portuguese", "korean", "japanese", "vietnamese", "turkish", "ambassador", "moderator"]
+}

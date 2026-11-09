@@ -1,0 +1,9 @@
+{
+  "_doc": "Pre-approvals the operator granted in advance, so a human tap is not needed for these exact cases. Each is bounded by action, size and expiry, and is only usable when the strategy's own trigger fires. Recorded in decisions.",
+  "approvals": [
+    {"action": "lp_recenter", "max_notional_usd": 45, "expires": "2026-12-08",
+     "approved_by": "operator, 2026-11-08 ('approve all')", "conditions": "lp-manage trigger only: LP out of range >= 60 min, 24h cooldown; slippage floor 0.5%; all recipients = wallet"},
+    {"action": "lp_exit", "max_notional_usd": 45, "expires": "2026-12-08",
+     "approved_by": "operator, 2026-11-08 ('approve all')", "conditions": "lp-manage trigger only: LP out of range >= 60 min and fee run-rate under 15% APR"}
+  ]
+}
