@@ -26,9 +26,9 @@ class Bot(unittest.TestCase):
         st = {r["id"]: r["status"] for r in bot.db().execute("SELECT id,status FROM opps")}
         self.assertNotEqual(st["t-1"], "DRAFTED")
     def test_description_can_demote_a_title_that_looked_good(self):
-        base = bot.estimate(opp(1, "Build and Route Challenge", reward=5000, subs=4), self.pr)["score"]
+        base = bot.estimate(opp(1, "Build a Python agent Challenge", reward=5000, subs=4), self.pr)["score"]
         stub = lambda o: {"text": "build a useful solana product with an api and bring real users with marketing", "region": "Global"}
-        bot.run(fetchers={"x": lambda: [opp(1, "Build and Route Challenge", reward=5000, subs=4)]}, notify=self.notify, force=True, details_fn=stub)
+        bot.run(fetchers={"x": lambda: [opp(1, "Build a Python agent Challenge", reward=5000, subs=4)]}, notify=self.notify, force=True, details_fn=stub)
         r = bot.db().execute("SELECT score,note FROM opps WHERE id='t-1'").fetchone()
         self.assertIn("outside the proven EVM stack", r["note"]); self.assertLess(r["score"], base * 0.2)      # firm: a technical-sounding word cannot rescue it
     def test_description_can_confirm_a_real_match(self):
@@ -67,6 +67,25 @@ class Bot(unittest.TestCase):
         bot.add_lead("Acme DAO", "https://example.org"); bot.lead_contacted(1)
         c = bot.db(); c.execute("UPDATE leads SET next_followup=? WHERE id=1", (iso_in(-1),)); c.commit()
         self.run_([]); self.assertTrue(any("follow up with lead 'Acme DAO'" in m for m in self.msgs))
+    def test_generic_words_alone_never_make_something_a_fit(self):
+        off = opp(1, "Write an Article on Fundraising Opportunities for Early and Mid-stage Startups", reward=500, subs=3)
+        on = opp(2, "Write an Article on Base onchain treasury reconciliation", reward=500, subs=3)
+        self.assertLess(bot.estimate(off, self.pr)["ev_usd"], bot.estimate(on, self.pr)["ev_usd"] / 2)
+        self.run_([off, on]); st = {r["id"]: r["status"] for r in bot.db().execute("SELECT id,status FROM opps")}
+        self.assertNotEqual(st["t-1"], "DRAFTED"); self.assertEqual(st["t-2"], "DRAFTED")
+    def test_previously_drafted_off_topic_items_are_demoted_on_the_next_run(self):
+        self.run_([opp(3, "Write an Article on Base onchain treasury reconciliation", reward=500, subs=3)])
+        c = bot.db(); c.execute("UPDATE opps SET domain=0 WHERE id='t-3'"); c.commit()
+        self.run_([]); self.assertEqual(bot.db().execute("SELECT status FROM opps WHERE id='t-3'").fetchone()[0], "NEW")
+    def test_thread_watch_alerts_only_when_posts_increase(self):
+        bot.add_lead("Acme", "https://forum.example.org/t/slug/123"); c = bot.db(); c.execute("UPDATE leads SET status='APPROVED'"); c.commit()
+        state = {"posts": 1}; fn = lambda url: {"posts": state["posts"], "last": "x", "by": "alice"}
+        def watch():
+            n = bot.watch_threads(c, self.notify, fn); c.commit(); return n                # one connection, committed like run() does
+        self.assertEqual(watch(), 0)                                                       # first sight = baseline, no alert
+        self.assertEqual(watch(), 0)
+        state["posts"] = 2; self.assertEqual(watch(), 1); self.assertTrue(any("NEW REPLY" in m for m in self.msgs))
+        self.assertEqual(watch(), 0)                                                       # same count again: quiet
     def test_outreach_pause_switch_and_daily_cap(self):
         bot.PAUSE = self.tmp / "outreach.pause"; c = bot.db()
         self.assertTrue(bot.may_send_today(c)); bot.PAUSE.write_text("x"); self.assertTrue(bot.outreach_paused()); self.assertFalse(bot.may_send_today(c))

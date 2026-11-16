@@ -21,6 +21,8 @@ def db():
       CREATE TABLE IF NOT EXISTS leads(id INTEGER PRIMARY KEY, name TEXT, url TEXT, pitch TEXT, status TEXT, created TEXT, last_contact TEXT, next_followup TEXT, note TEXT);
       CREATE TABLE IF NOT EXISTS watch(url TEXT PRIMARY KEY, sha TEXT, changed_at TEXT);
       CREATE TABLE IF NOT EXISTS runs(id INTEGER PRIMARY KEY, ts TEXT, summary TEXT);""")
+    try: c.execute("ALTER TABLE opps ADD COLUMN domain INTEGER DEFAULT 0")
+    except sqlite3.OperationalError: pass
     return c
 
 def _get(url, timeout=30):
@@ -85,24 +87,29 @@ def estimate(o, pr):
         ev = max(0.0, p) * typical
         fit = 0.5
     else:
-        fit = max(0.15, min(1.5, 0.7 + 0.25 * len(pos) - 0.6 * len(neg)))
+        generic = set(pr.get("keywords_generic", []))
+        domain = [k for k in pos if k not in generic]
+        fit = max(0.15, min(1.5, 0.7 + 0.25 * len(domain) + 0.05 * (len(pos) - len(domain)) - 0.6 * len(neg)))
+        if not domain: fit = min(fit, 0.3)                                                  # "write"/"article"/"tool" alone say nothing about the topic
         if any(k in neg for k in HARD_NO): fit *= 0.1                                        # wrong kind of work entirely (video, design, trading contests...)
         if any(k in (o["title"] + " " + o.get("url", "")).lower() for k in ("solana", "sui ", "aptos", "ton ")) and not any(k in pos for k in ("base", "ethereum", "onchain")): fit *= 0.4   # outside the proven stack (EVM)
         subs = o.get("competition"); winners = 3 if o["reward_usd"] >= 500 else 1
         p = min(0.6, winners / ((subs if subs is not None else 30) + winners))
         ev = o["reward_usd"] * p * fit
         effort = 8.0 if o["kind"] in ("project", "hackathon") or any(k in o["title"].lower() for k in ("build", "develop", "integrat", "bot", "tool")) else 2.5
-    return {"ev_usd": round(ev, 2), "effort_h": effort, "score": round(ev / effort, 2), "fit": f"+{pos[:5]} -{neg[:3]}"}
+    n_domain = 1 if o["source"] == "immunefi" else len([k for k in pos if k not in set(pr.get("keywords_generic", []))])
+    return {"ev_usd": round(ev, 2), "effort_h": effort, "score": round(ev / effort, 2), "fit": f"+{pos[:5]} -{neg[:3]}", "domain": n_domain}
 
 # ---------- persistence + state machine ----------
 def upsert(c, o, pr):
     est = estimate(o, pr); t = now_iso()
     row = c.execute("SELECT status FROM opps WHERE id=?", (o["id"],)).fetchone()
     if row:
-        c.execute("UPDATE opps SET last_seen=?, reward_usd=?, deadline=?, competition=?, ev_usd=?, score=?, effort_h=?, fit=? WHERE id=?",
-                  (t, o["reward_usd"], o["deadline"], o["competition"], est["ev_usd"], est["score"], est["effort_h"], est["fit"], o["id"])); return False
-    c.execute("INSERT INTO opps VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (o["id"], o["source"], o["kind"], o["title"], o["url"], o["reward_usd"], o["deadline"], o["competition"],
-              est["effort_h"], est["ev_usd"], est["score"], est["fit"], "NEW", t, t, None, "", None)); return True
+        c.execute("UPDATE opps SET last_seen=?, reward_usd=?, deadline=?, competition=?, ev_usd=?, score=?, effort_h=?, fit=?, domain=? WHERE id=?",
+                  (t, o["reward_usd"], o["deadline"], o["competition"], est["ev_usd"], est["score"], est["effort_h"], est["fit"], est["domain"], o["id"])); return False
+    c.execute("INSERT INTO opps(id,source,kind,title,url,reward_usd,deadline,competition,effort_h,ev_usd,score,fit,status,first_seen,last_seen,draft,note,alerted) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (o["id"], o["source"], o["kind"], o["title"], o["url"], o["reward_usd"], o["deadline"], o["competition"],
+              est["effort_h"], est["ev_usd"], est["score"], est["fit"], "NEW", t, t, None, "", None))
+    c.execute("UPDATE opps SET domain=? WHERE id=?", (est["domain"], o["id"])); return True
 
 def hours_to(deadline):
     try: return (datetime.datetime.fromisoformat(deadline + "T23:59:00+00:00") - datetime.datetime.now(datetime.timezone.utc)).total_seconds() / 3600
@@ -143,6 +150,26 @@ Hi, I'm {pr.get('agent_name', pr['handle'])}. {pr.get('disclosure', '')} {pr['he
 - [ ] Record it: `python3 -m farmv2 pipeline submitted {o['id']}`
 """
 
+def thread_state(url):
+    """Post count of a Discourse thread via its public JSON. Returns None if the URL is not a Discourse topic or cannot be read."""
+    m = re.match(r"(https?://[^/]+)/t/(?:[^/]+/)?(\d+)", url)
+    if not m: return None
+    d = json.loads(_get(f"{m.group(1)}/t/{m.group(2)}.json"))
+    return {"posts": int(d.get("posts_count", 0)), "last": d.get("last_posted_at"), "by": d.get("last_poster_username")}
+
+def watch_threads(c, notify, thread_fn=thread_state):
+    n = 0
+    for r in c.execute("SELECT * FROM leads WHERE status IN ('APPROVED','CONTACTED','FOLLOWUP')").fetchall():
+        try: st = thread_fn(r["url"])
+        except Exception: continue
+        if not st: continue
+        key = "thread:" + r["url"]; w = c.execute("SELECT sha FROM watch WHERE url=?", (key,)).fetchone()
+        if not w: c.execute("INSERT INTO watch VALUES(?,?,?)", (key, str(st["posts"]), now_iso())); continue
+        if st["posts"] > int(w["sha"]):
+            notify("INFO", f"Pipeline: NEW REPLY activity on '{r['name']}' thread ({w['sha']} -> {st['posts']} posts, last by {st['by']}): {r['url']}"); n += 1
+            c.execute("UPDATE watch SET sha=?, changed_at=? WHERE url=?", (str(st["posts"]), now_iso(), key))
+    return n
+
 def watch_pages(c, urls):
     changed = []
     for u in urls:
@@ -164,12 +191,15 @@ def run(fetchers=None, notify=None, force=False, details_fn=None):
         try:
             for o in fn(): stats["new"] += upsert(c, o, pr)
         except Exception as e: stats["errors"].append(f"{name}: {str(e)[:80]}")
+    if fetchers is None: stats["alerts"] += watch_threads(c, notify)
     for u in (watch_pages(c, C["watch_pages"]) if fetchers is None else []):
         notify("INFO", f"Funding page changed, worth a look: {u}"); stats["alerts"] += 1
     for r in c.execute("SELECT * FROM opps WHERE status IN ('NEW','SHORTLISTED','DRAFTED')").fetchall():
         h = hours_to(r["deadline"]) if r["deadline"] else None
         if h is not None and h < 0: c.execute("UPDATE opps SET status='EXPIRED' WHERE id=?", (r["id"],)); stats["expired"] += 1; continue
-        if r["status"] == "NEW" and r["score"] >= C["shortlist_min_score"] and (h is None or h > 24): c.execute("UPDATE opps SET status='SHORTLISTED' WHERE id=?", (r["id"],))
+        if r["status"] in ("SHORTLISTED", "DRAFTED") and r["source"] == "superteam" and not r["domain"]:
+            c.execute("UPDATE opps SET status='NEW', note=? WHERE id=?", ("demoted: no domain keyword (generic words only)", r["id"])); continue
+        if r["status"] == "NEW" and r["score"] >= C["shortlist_min_score"] and r["domain"] and (h is None or h > 24): c.execute("UPDATE opps SET status='SHORTLISTED' WHERE id=?", (r["id"],))
     details_fn = details_fn if details_fn is not None else (fetch_superteam_details if fetchers is None else None)
     if details_fn:                                       # read the full text of the few items about to be drafted, then re-rank
         for r in c.execute("SELECT * FROM opps WHERE status='SHORTLISTED' AND source='superteam' AND (note IS NULL OR note NOT LIKE 'refined:%') ORDER BY score DESC LIMIT 6").fetchall():
@@ -194,7 +224,7 @@ def run(fetchers=None, notify=None, force=False, details_fn=None):
 def counts(c): return {r["status"]: r["n"] for r in c.execute("SELECT status, count(*) n FROM opps GROUP BY status")}
 
 def top_open(c, n=8):
-    return [dict(r) for r in c.execute("SELECT id,source,kind,title,url,reward_usd,deadline,competition,ev_usd,effort_h,score,status FROM opps WHERE status IN ('NEW','SHORTLISTED','DRAFTED') ORDER BY score DESC LIMIT ?", (n,))]
+    return [dict(r) for r in c.execute("SELECT id,source,kind,title,url,reward_usd,deadline,competition,ev_usd,effort_h,score,status FROM opps WHERE status IN ('NEW','SHORTLISTED','DRAFTED') ORDER BY (domain>0) DESC, score DESC LIMIT ?", (n,))]
 
 def write_digest(c):
     cn = counts(c); L = [f"# Opportunity pipeline digest ({now_iso()[:16]} UTC)", "", "Status: " + ", ".join(f"{k} {v}" for k, v in sorted(cn.items())), "", "## Next actions for you (the bot never submits or contacts anyone)"]
